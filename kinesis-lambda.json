@@ -26,7 +26,7 @@
             "Type": "String"
         },
         "S3KmsKeyAlias": {
-            /* 这个地方一定要有alias */
+            
             "Default": "alias/mgx", 
             "Description": "KmsKey to encrypt and decrypt objects in the raw bucket",
             "Type": "String"
