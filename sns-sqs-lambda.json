@@ -20,6 +20,16 @@
             "Description": "AWS Region",
             "Type": "String"
         },
+        "S3KmsKeyAlias": {
+            "Default": "alias/maggie412",
+            "Description": "KmsKey to encrypt and decrypt objects in the raw bucket",
+            "Type": "String"
+        },
+        "S3KmsKeyArn": {
+            "Default": "arn:aws:kms:us-east-1:184660313859:key/049a5508-26fb-45c9-ab17-73ebb5454e72",
+            "Description": "KmsKey to encrypt and decrypt objects in the raw bucket",
+            "Type": "String"
+        },
         "SQSName": {
             "Default": "CrossAccountSQS",
             "Description": "SQS Queue Name",
@@ -41,6 +51,9 @@
             "Type": "AWS::SNS::Topic",
             "Properties": {
                 "DisplayName": "Send Email Topic",
+                "KmsMasterKeyId": {
+                    "Ref": "S3KmsKeyAlias"
+                },
                 "Subscription": [
                     {
                         "Endpoint": "maggiexiang412@gmail.com",
@@ -114,6 +127,9 @@
             "Type": "AWS::SNS::Topic",
             "Properties": {
                 "DisplayName": "Receive Event Topic",
+                "KmsMasterKeyId": {
+                    "Ref": "S3KmsKeyAlias"
+                },
                 "Subscription": [
                     {
                         "Endpoint": "maggiex412@gmail.com",
@@ -194,6 +210,9 @@
         "CrossAccountSQS": {
             "Type": "AWS::SQS::Queue",
             "Properties": {
+                "KmsMasterKeyId": {
+                    "Ref": "S3KmsKeyAlias"
+                },
                 "QueueName": {
                     "Ref": "SQSName"
                 },
@@ -272,7 +291,7 @@
                     "x86_64"
                 ],
                 "Code": {
-                    "S3Bucket": "mg-mylambdafunction-buckets",
+                    "S3Bucket": "mylambdafunction-buckets-maggie",
                     "S3Key": "send_email_lambda.zip"
                 },
                 "EphemeralStorage": {
@@ -353,6 +372,19 @@
                                     ],
                                     "Resource": {
                                         "Ref": "SendEmailSNS"
+                                    }
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "kms:Encrypt",
+                                        "kms:Decrypt",
+                                        "kms:ReEncrypt*",
+                                        "kms:GenerateDataKey*",
+                                        "kms:DescribeKey"
+                                    ],
+                                    "Resource": {
+                                        "Ref": "S3KmsKeyArn"
                                     }
                                 }
                             ]
