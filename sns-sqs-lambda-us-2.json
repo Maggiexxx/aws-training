@@ -1,0 +1,456 @@
+{
+    "Parameters": {
+        "AccountId": {
+            "Default": "184660313859",
+            "Description": "AWS Account ID",
+            "Type": "String"
+        },
+        "Account": {
+            "Default": "mg412",
+            "Description": "AWS Account",
+            "Type": "String"
+        },
+        "FunctionName": {
+            "Default": "CrossAccount_Send_Email_Lambda",
+            "Description": "Lambda Function Name",
+            "Type": "String"
+        },
+        "Region": {
+            "Default": "us-east-2",
+            "Description": "AWS Region",
+            "Type": "String"
+        },
+        "S3KmsKeyAlias": {
+            "Default": "alias/maggie412",
+            "Description": "KmsKey to encrypt and decrypt objects in the raw bucket",
+            "Type": "String"
+        },
+        "S3KmsKeyArn": {
+            "Default": "arn:aws:kms:us-east-1:184660313859:key/049a5508-26fb-45c9-ab17-73ebb5454e72",
+            "Description": "KmsKey to encrypt and decrypt objects in the raw bucket",
+            "Type": "String"
+        },
+        "SQSName": {
+            "Default": "CrossAccountSQS",
+            "Description": "SQS Queue Name",
+            "Type": "String"
+        },
+        "SNSName": {
+            "Default": "CrossAccount-Schema-Change-Detection-Topic",
+            "Description": "SNS Topic Name",
+            "Type": "String"
+        },
+        "SendEmailSNSName": {
+            "Default": "CrossAccount-Send-Email-Topic",
+            "Description": "SNS Topic Name",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "SendEmailSNS": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "DisplayName": "Send Email Topic",
+                "KmsMasterKeyId": {
+                    "Ref": "S3KmsKeyAlias"
+                },
+                "Subscription": [
+                    {
+                        "Endpoint": "maggiexiang412@gmail.com",
+                        "Protocol": "email"
+                    }
+                ],
+                "TopicName": {
+                    "Ref": "SendEmailSNSName"
+                }
+            }
+        },
+        "SendEmailSNSPolicy": {
+            "Type": "AWS::SNS::TopicPolicy",
+            "Properties": {
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Sid": "AccountAccess",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": "*"
+                            },
+                            "Action": [
+                                "SNS:GetTopicAttributes",
+                                "SNS:SetTopicAttributes",
+                                "SNS:AddPermission",
+                                "SNS:RemovePermission",
+                                "SNS:DeleteTopic",
+                                "SNS:Subscribe",
+                                "SNS:ListSubscriptionsByTopic",
+                                "SNS:Publish",
+                                "SNS:Receive"
+                            ],
+                            "Resource": [
+                                {
+                                    "Ref": "SendEmailSNS"
+                                }
+                            ],
+                            "Condition": {
+                                "StringEquals": {
+                                    "AWS:SourceOwner": "184660313859"
+                                }
+                            }
+                        },
+                        {
+                            "Action": [
+                                "sns:Publish"
+                            ],
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Resource": [
+                                {
+                                    "Ref": "SendEmailSNS"
+                                }
+                            ],
+                            "Sid": "LambdaAccess"
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "Topics": [
+                    {
+                        "Ref": "SendEmailSNS"
+                    }
+                ]
+            }
+        },
+        "CrossAccountSNS": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "DisplayName": "Receive Event Topic",
+                "KmsMasterKeyId": {
+                    "Ref": "S3KmsKeyAlias"
+                },
+                "Subscription": [
+                    {
+                        "Endpoint": "maggiex412@gmail.com",
+                        "Protocol": "email"
+                    },
+                    {
+                        "Endpoint": {
+                            "Fn::Sub": "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${SQSName}"
+                        },
+                        "Protocol": "sqs"
+                    }
+                ],
+                "TopicName": {
+                    "Ref": "SNSName"
+                }
+            }
+        },
+        "CrossAccountSNSPolicy": {
+            "Type": "AWS::SNS::TopicPolicy",
+            "Properties": {
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": [
+                                "SNS:GetTopicAttributes",
+                                "SNS:SetTopicAttributes",
+                                "SNS:AddPermission",
+                                "SNS:RemovePermission",
+                                "SNS:DeleteTopic",
+                                "SNS:Subscribe",
+                                "SNS:ListSubscriptionsByTopic",
+                                "SNS:Publish",
+                                "SNS:Receive"
+                            ],
+                            "Condition": {
+                                "StringEquals": {
+                                    "AWS:SourceOwner": {
+                                        "Ref": "AWS::AccountId"
+                                    }
+                                }
+                            },
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": "*"
+                            },
+                            "Resource": [
+                                {
+                                    "Ref": "CrossAccountSNS"
+                                }
+                            ],
+                            "Sid": "SNSPolicy"
+                        },
+                        {
+                            "Action": [
+                                "sns:Publish"
+                            ],
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "events.amazonaws.com"
+                            },
+                            "Resource": [
+                                {
+                                    "Ref": "CrossAccountSNS"
+                                }
+                            ],
+                            "Sid": "EventAccess"
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "Topics": [
+                    {
+                        "Ref": "CrossAccountSNS"
+                    }
+                ]
+            }
+        },
+        "CrossAccountSQS": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+                "KmsMasterKeyId": {
+                    "Ref": "S3KmsKeyAlias"
+                },
+                "QueueName": {
+                    "Ref": "SQSName"
+                },
+                "VisibilityTimeout": 720
+            }
+        },
+        "CrossAccountQueuePolicy": {
+            "Type": "AWS::SQS::QueuePolicy",
+            "Properties": {
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": [
+                                "sqs:*"
+                            ],
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "arn:aws:iam::",
+                                            {
+                                                "Ref": "AWS::AccountId"
+                                            },
+                                            ":root"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "Resource": {
+                                "Fn::GetAtt": [
+                                    "CrossAccountSQS",
+                                    "Arn"
+                                ]
+                            },
+                            "Sid": "RootAccountAccess"
+                        },
+                        {
+                            "Action": [
+                                "sqs:SendMessage"
+                            ],
+                            "Condition": {
+                                "ArnLike": {
+                                    "aws:SourceArn": {
+                                        "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${SNSName}"
+                                    }
+                                }
+                            },
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": "*"
+                            },
+                            "Resource": {
+                                "Fn::GetAtt": [
+                                    "CrossAccountSQS",
+                                    "Arn"
+                                ]
+                            },
+                            "Sid": "Topic-subscription"
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "Queues": [
+                    {
+                        "Ref": "CrossAccountSQS"
+                    }
+                ]
+            }
+        },
+        "SendEmailLambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Architectures": [
+                    "x86_64"
+                ],
+                "Code": {
+                    "S3Bucket": "mylambdafunction-buckets-us-2-maggie",
+                    "S3Key": "send_email_lambda.zip"
+                },
+                "EphemeralStorage": {
+                    "Size": 1024
+                },
+                "FunctionName": {
+                    "Ref": "FunctionName"
+                },
+                "Handler": "send_email_lambda.lambda_handler",
+                "MemorySize": 128,
+                "PackageType": "Zip",
+                "Role": {
+                    "Fn::GetAtt": [
+                        "SendEmailLambdaRole",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "python3.10",
+                "Timeout": 120
+            }
+        },
+        "SendEmailLambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "EmailLambdaAccess",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Sid": "LogAccess",
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:*"
+                                    ],
+                                    "Resource": "arn:aws:logs:*:*:*"
+                                },
+                                {
+                                    "Sid": "SQSAccess",
+                                    "Action": [
+                                        "sqs:DeleteMessage",
+                                        "sqs:GetQueueUrl",
+                                        "sqs:ChangeMessageVisibility",
+                                        "sqs:ReceiveMessage",
+                                        "sqs:GetQueueAttributes"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": {
+                                        "Fn::GetAtt": [
+                                            "CrossAccountSQS",
+                                            "Arn"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "Sid": "SNSPermission",
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "sns:Publish"
+                                    ],
+                                    "Resource": {
+                                        "Ref": "SendEmailSNS"
+                                    }
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "kms:Encrypt",
+                                        "kms:Decrypt",
+                                        "kms:ReEncrypt*",
+                                        "kms:GenerateDataKey*",
+                                        "kms:DescribeKey"
+                                    ],
+                                    "Resource": {
+                                        "Ref": "S3KmsKeyArn"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "RoleName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "Account"
+                            },
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            "CrossAccount-Email-Lambda-Role"
+                        ]
+                    ]
+                }
+            }
+        },
+        "SQSEventSourceMapping": {
+            "Type": "AWS::Lambda::EventSourceMapping",
+            "DependsOn": [
+                "CrossAccountSQS",
+                "SendEmailLambda"
+            ],
+            "Properties": {
+                "Enabled": true,
+                "EventSourceArn": {
+                    "Fn::GetAtt": [
+                        "CrossAccountSQS",
+                        "Arn"
+                    ]
+                },
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "SendEmailLambda",
+                        "Arn"
+                    ]
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "SendEmailSNS": {
+            "Description": "Send Email Topic",
+            "Value": {
+                "Ref": "SendEmailSNS"
+            }
+        },
+        "CrossAccountSNS": {
+            "Description": "Schema Change Detection Topic",
+            "Value": {
+                "Ref": "CrossAccountSNS"
+            }
+        },
+        "CrossAccountSQS": {
+            "Description": "CrossAccount SQS",
+            "Value": {
+                "Fn::GetAtt": [
+                    "CrossAccountSQS",
+                    "QueueName"
+                ]
+            }
+        }
+    }
+}

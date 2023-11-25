@@ -1,0 +1,25 @@
+import json
+event = {'Records': [{'messageId': '5df82821-4ebf-4092-9ccc-b47c2d0424a7', 'receiptHandle': 'AQEBsRwucuvC4gHCsV47ZMywzaxAPOGpWrCrgAzA/Zbq4Q2uAPbsbur2Yc8TXxxMaZRUezVz5c4R9Y9PY4M/waLrMX4PWbK84nPUSAeYK9cTiBSkZTGj+AjPh4ugdPBVTFcAW3eIB/HdnqpFcyHGT0nBadGhaU4qRhZzSWrvuS7GTsesnxWKZoA/txdv95N7ooDt91Yw910Koy2YEoPg9LoLJxDQtNhdqmv8BabPchNTDO6zTRxJR/Y4sMoNRi5YlwQwAb8AyQOdohgvFsI24vk6QZxr2b5zt9Y8d8uIPMAlgQkitcpBs6f0RvHKBB1OapXwWdE5zRlm897481mVNlMrIOZHczkgcGepCld36Tsv8VG+P9DD7VR704scO3tgoeysE6TN4A15OkaXJusuKIVknq1FVxoPttskdKz9CkM43Ec=', 'body': '{\n  "Type" : "Notification",\n  "MessageId" : "16606caa-97ce-5b17-b7e6-310038d97c70",\n  "TopicArn" : "arn:aws:sns:us-east-2:955304207641:email_trigger_topic",\n  "Message" : "{\\"version\\":\\"0\\",\\"id\\":\\"81ef6a52-dba6-bcd5-1821-e3c5925340cf\\",\\"detail-type\\":\\"Glue Data Catalog Table State Change\\",\\"source\\":\\"aws.glue\\",\\"account\\":\\"955304207641\\",\\"time\\":\\"2023-10-19T04:13:08Z\\",\\"region\\":\\"us-east-2\\",\\"resources\\":[\\"arn:aws:glue:us-east-2:955304207641:table/schema-crawler-testing/crawler_file\\"],\\"detail\\":{\\"databaseName\\":\\"schema-crawler-testing\\",\\"changedPartitions\\":[],\\"typeOfChange\\":\\"UpdateTable\\",\\"tableName\\":\\"crawler_file\\"}}",\n  "Timestamp" : "2023-10-19T04:13:11.532Z",\n  "SignatureVersion" : "1",\n  "Signature" : "SwTNMLgnUKS0dsV339drrjUTIs/ufF5l0CR+ycSp9QFkahOzopzMxBDc/D8oskSy7uyK+f2sG3HibMf1yHxPEdUlUeHSMiM1oM4RAZMG7yU0nLhNh1zCa1jqMPRZOe8iq/UfQ1LaTccOl4XoD/LKvNrk/MxYlxdhWH2HCK5KRjV5FRvIsZZNenxdI5GJh7hxmTHrhsw8BjdB1JOo84uzQ1iZd0eqRVmXDNCpFbW86rEAWYJDhgopFpIp+Wlp1kDXtnD380doqMx9GyJ4k70GRQv3vqQluVWZv/j6sb6pwPqK7KRrr5XijV+wwuVfh+ci9u9piMOEz96Qqt0CiuILnQ==",\n  "SigningCertURL" : "https://sns.us-east-2.amazonaws.com/SimpleNotificationService-01d088a6f77103d0fe307c0069e40ed6.pem",\n  "UnsubscribeURL" : "https://sns.us-east-2.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-2:955304207641:email_trigger_topic:df5641fc-ba14-4e65-90e6-735988ca3897"\n}', 'attributes': {'ApproximateReceiveCount': '1', 'SentTimestamp': '1697688791568', 'SenderId': 'AIDAJQR6QDGQ7PATMSYEY', 'ApproximateFirstReceiveTimestamp': '1697688791572'}, 'messageAttributes': {}, 'md5OfBody': 'f2e171c6022cc968d47fdafc352c3597', 'eventSource': 'aws:sqs', 'eventSourceARN': 'arn:aws:sqs:us-east-2:955304207641:email-lambda-trigger-queue', 'awsRegion': 'us-east-2'}]}
+ser_event = json.dumps(event)
+print(ser_event)
+
+output = {
+  "Records": [
+    {
+      "messageId": "5df82821-4ebf-4092-9ccc-b47c2d0424a7",
+      "receiptHandle": "AQEBsRwucuvC4gHCsV47ZMywzaxAPOGpWrCrgAzA/Zbq4Q2uAPbsbur2Yc8TXxxMaZRUezVz5c4R9Y9PY4M/waLrMX4PWbK84nPUSAeYK9cTiBSkZTGj+AjPh4ugdPBVTFcAW3eIB/HdnqpFcyHGT0nBadGhaU4qRhZzSWrvuS7GTsesnxWKZoA/txdv95N7ooDt91Yw910Koy2YEoPg9LoLJxDQtNhdqmv8BabPchNTDO6zTRxJR/Y4sMoNRi5YlwQwAb8AyQOdohgvFsI24vk6QZxr2b5zt9Y8d8uIPMAlgQkitcpBs6f0RvHKBB1OapXwWdE5zRlm897481mVNlMrIOZHczkgcGepCld36Tsv8VG+P9DD7VR704scO3tgoeysE6TN4A15OkaXJusuKIVknq1FVxoPttskdKz9CkM43Ec=",
+      "body": "{\n  \"Type\" : \"Notification\",\n  \"MessageId\" : \"16606caa-97ce-5b17-b7e6-310038d97c70\",\n  \"TopicArn\" : \"arn:aws:sns:us-east-2:955304207641:email_trigger_topic\",\n  \"Message\" : \"{\\\"version\\\":\\\"0\\\",\\\"id\\\":\\\"81ef6a52-dba6-bcd5-1821-e3c5925340cf\\\",\\\"detail-type\\\":\\\"Glue Data Catalog Table State Change\\\",\\\"source\\\":\\\"aws.glue\\\",\\\"account\\\":\\\"955304207641\\\",\\\"time\\\":\\\"2023-10-19T04:13:08Z\\\",\\\"region\\\":\\\"us-east-2\\\",\\\"resources\\\":[\\\"arn:aws:glue:us-east-2:955304207641:table/schema-crawler-testing/crawler_file\\\"],\\\"detail\\\":{\\\"databaseName\\\":\\\"schema-crawler-testing\\\",\\\"changedPartitions\\\":[],\\\"typeOfChange\\\":\\\"UpdateTable\\\",\\\"tableName\\\":\\\"crawler_file\\\"}}\",\n  \"Timestamp\" : \"2023-10-19T04:13:11.532Z\",\n  \"SignatureVersion\" : \"1\",\n  \"Signature\" : \"SwTNMLgnUKS0dsV339drrjUTIs/ufF5l0CR+ycSp9QFkahOzopzMxBDc/D8oskSy7uyK+f2sG3HibMf1yHxPEdUlUeHSMiM1oM4RAZMG7yU0nLhNh1zCa1jqMPRZOe8iq/UfQ1LaTccOl4XoD/LKvNrk/MxYlxdhWH2HCK5KRjV5FRvIsZZNenxdI5GJh7hxmTHrhsw8BjdB1JOo84uzQ1iZd0eqRVmXDNCpFbW86rEAWYJDhgopFpIp+Wlp1kDXtnD380doqMx9GyJ4k70GRQv3vqQluVWZv/j6sb6pwPqK7KRrr5XijV+wwuVfh+ci9u9piMOEz96Qqt0CiuILnQ==\",\n  \"SigningCertURL\" : \"https://sns.us-east-2.amazonaws.com/SimpleNotificationService-01d088a6f77103d0fe307c0069e40ed6.pem\",\n  \"UnsubscribeURL\" : \"https://sns.us-east-2.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-2:955304207641:email_trigger_topic:df5641fc-ba14-4e65-90e6-735988ca3897\"\n}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1697688791568",
+        "SenderId": "AIDAJQR6QDGQ7PATMSYEY",
+        "ApproximateFirstReceiveTimestamp": "1697688791572"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "f2e171c6022cc968d47fdafc352c3597",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:us-east-2:955304207641:email-lambda-trigger-queue",
+      "awsRegion": "us-east-2"
+    }
+  ]
+}

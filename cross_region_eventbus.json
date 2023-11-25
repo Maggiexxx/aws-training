@@ -1,0 +1,164 @@
+{
+    "Parameters": {
+        "AccountId": {
+            "Default": "163713723397",
+            "Description": "AWS Account ID",
+            "Type": "String"
+        },
+        "Account": {
+            "Default": "MaggieX",
+            "Description": "AWS Account",
+            "Type": "String"
+        },
+        "EventBusName": {
+            "Default": "Cross-Region-Demo-EventBus",
+            "Description": "Custom EventBus Name",
+            "Type": "String"
+        },
+        "StatementId": {
+            "Default": "Cross-Region-Demo-EventBus-StatementId",
+            "Description": "Custom EventBus Policy StatementId",
+            "Type": "String"
+        },
+        "LogName": {
+            "Default": "\/aws\/events\/cross-region-custom-event-bus-loggroup",
+            "Description": "Custom EventBus Log Group Name",
+            "Type": "String"
+        },
+        "RuleName": {
+            "Default": "Cross-Region-Custom-EventBus-Event-Rule",
+            "Description": "Event Bus Rule Name",
+            "Type": "String"
+        },
+        "SNSTopic": {
+            "Default": "CrossRegion-Schema-Change-Detection-Topic",
+            "Description": "SNS Topic Name",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "CustomEventBus": {
+            "Type": "AWS::Events::EventBus",
+            "Properties": {
+                "Name": {
+                    "Ref": "EventBusName"
+                }
+            }
+        },
+        "CustomEventBusPolicy": {
+            "Type": "AWS::Events::EventBusPolicy",
+            "Properties": {
+                "EventBusName": {
+                    "Ref": "CustomEventBus"
+                },
+                "Statement": {
+                    "Action": [
+                        "events:PutEvents"
+                    ],
+                    "Effect": "Allow",
+                    "Principal": {
+                        "AWS": [
+                            {
+                                "Fn::Sub": "arn:aws:iam::${AccountId}:root"
+                            }
+                        ]
+                    },
+                    "Condition": {
+                        "ForAllValues:StringEquals": {
+                            "events:detail-type": [
+                                "Glue Data Catalog Table State Change",
+                                "Glue Data Catalog Database State Change"
+                            ]
+                        },
+                        "StringEquals": {
+                            "events:source": "aws.glue"
+                        }
+                    },
+                    "Resource": {
+                        "Fn::GetAtt": [
+                            "CustomEventBus",
+                            "Arn"
+                        ]
+                    }
+                },
+                "StatementId": {
+                    "Ref": "StatementId"
+                }
+            }
+        },
+        "CustomEventBusLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+                "LogGroupName": {
+                    "Ref": "LogName"
+                },
+                "RetentionInDays": 120
+            }
+        },
+        "CustomEventBusRule": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Description": "Cross Region Event Bus Rule",
+                "EventBusName": {
+                    "Ref": "CustomEventBus"
+                },
+                "EventPattern": {
+                    "source": [
+                        "aws.glue"
+                    ],
+                    "detail": {
+                        "databaseName": [
+                            "schema-crawler-testing"
+                        ],
+                        "typeOfChange": [
+                            "UpdateTable",
+                            "CreateTable"
+                        ]
+                    },
+                    "detail-type": [
+                        "Glue Data Catalog Table State Change",
+                        "Glue Data Catalog Database State Change"
+                    ]
+                },
+                "Name": {
+                    "Fn::Sub": "${RuleName}"
+                },
+                "State": "ENABLED",
+                "Targets": [
+                    {
+                        "Arn": {
+                            "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopic}"
+                        },
+                        "Id": "CustomEventBusRuleSNSTarget"
+                    },
+                    {
+                        "Arn": {
+                            "Fn::GetAtt": [
+                                "CustomEventBusLogGroup",
+                                "Arn"
+                            ]
+                        },
+                        "Id": "Custom-Event-Bus-Log-Group"
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs":{
+        "CustomEventBus":{
+            "Value":{
+                "Ref":"CustomEventBus"
+            }
+        },
+        "CustomEventBusLogGroup":{
+            "Value":{
+                "Ref":"CustomEventBusLogGroup"
+            }
+        },
+        "CustomEventBusRule":{
+            "Value":{
+                "Ref":"CustomEventBusRule"
+            }
+        }
+    }
+}

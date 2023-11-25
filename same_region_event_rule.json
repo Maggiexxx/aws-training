@@ -1,0 +1,228 @@
+{
+    "Parameters": {
+        "RuleName": {
+            "Default": "Same-Region-Event-Rule",
+            "Description": "Event Bus Rule Name",
+            "Type": "String"
+        },
+        "CrossAccountRuleName": {
+            "Default": "Cross-Account-Event-Rule",
+            "Description": "Event Bus Rule Name",
+            "Type": "String"
+        },
+        "Account": {
+            "Default": "MaggieX",
+            "Description": "AWS Account",
+            "Type": "String"
+        },
+        "CrossAccountID": {
+            "Default": "184660313859",
+            "Description": "AWS Cross Account ID",
+            "Type": "String"
+        },
+        "CrossRegion": {
+            "Default": "us-east-2",
+            "Description": "AWS Region",
+            "Type": "String"
+        },
+        "SNSArn": {
+            "Default": "arn:aws:sns:us-east-1:163713723397:Ca-Schema-Change-Detection-Topic",
+            "Description": "SNS Topic Arn",
+            "Type": "String"
+        },
+        "LogName": {
+            "Default": "\/aws\/events\/source-account-event-bus-loggroup",
+            "Description": "EventBus Log Group Name",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "SameRegionRule": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Description": "Same Region Event Bus Rule",
+                "EventBusName": "default",
+                "EventPattern": {
+                    "source": [
+                        "aws.glue"
+                    ],
+                    "detail": {
+                        "databaseName": [
+                            "schema-crawler-testing"
+                        ],
+                        "typeOfChange": [
+                            "UpdateTable",
+                            "CreateTable"
+                        ]
+                    },
+                    "detail-type": [
+                        "Glue Data Catalog Table State Change",
+                        "Glue Data Catalog Database State Change"
+                    ]
+                },
+                "Name": {
+                    "Fn::Sub": "${RuleName}"
+                },
+                "State": "ENABLED",
+                "Targets": [
+                    {
+                        "Arn": {
+                            "Ref": "SNSArn"
+                        },
+                        "Id": "SameRegionRuleSNSTarget"
+                    }
+                ]
+            }
+        },
+        "CrossAccountRule": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Description": "Same Region Event Bus Rule",
+                "EventBusName": "default",
+                "EventPattern": {
+                    "source": [
+                        "aws.glue"
+                    ],
+                    "detail": {
+                        "databaseName": [
+                            "schema-crawler-testing"
+                        ],
+                        "typeOfChange": [
+                            "UpdateTable",
+                            "CreateTable"
+                        ]
+                    },
+                    "detail-type": [
+                        "Glue Data Catalog Table State Change",
+                        "Glue Data Catalog Database State Change"
+                    ]
+                },
+                "Name": {
+                    "Fn::Sub": "${CrossAccountRuleName}"
+                },
+                "State": "ENABLED",
+                "RoleArn": {
+                    "Fn::GetAtt": [
+                        "CrossAccountRole",
+                        "Arn"
+                    ]
+                },
+                "Targets": [
+                    {
+                        "Arn": {
+                            "Fn::Sub": "arn:aws:events:${AWS::Region}:${CrossAccountID}:event-bus/Cross-Region-Demo-EventBus"
+                        },
+                        "Id": "Cross_Account_Event_Bus",
+                        "RoleArn": {
+                            "Fn::GetAtt": [
+                                "CrossAccountRole",
+                                "Arn"
+                            ]
+                        }
+                    },
+                    {
+                        "Arn": {
+                            "Fn::Sub": "arn:aws:events:${CrossRegion}:${CrossAccountID}:event-bus/Cross-Region-Demo-EventBus"
+                        },
+                        "Id": "Cross_Account_Cross_Region_Event_Bus",
+                        "RoleArn": {
+                            "Fn::GetAtt": [
+                                "CrossAccountRole",
+                                "Arn"
+                            ]
+                        }
+                    },
+                    {
+                        "Arn": {
+                            "Fn::Sub": "arn:aws:events:${CrossRegion}:${AWS::AccountId}:event-bus/Cross-Region-Demo-EventBus"
+                        },
+                        "Id": "Cross_Region_Event_Bus",
+                        "RoleArn": {
+                            "Fn::GetAtt": [
+                                "CrossAccountRole",
+                                "Arn"
+                            ]
+                        }
+                    },
+                    {
+                        "Arn": {
+                            "Fn::GetAtt": [
+                                "SourceEventBusLogGroup",
+                                "Arn"
+                            ]
+                        },
+                        "Id": "Source-Account-log-group"
+                    }
+                ]
+            }
+        },
+        "CrossAccountRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "events.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "SourceAccountEventPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Sid": "CrossAccountEventAccessPermission",
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "events:PutEvents"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Fn::Sub": "arn:aws:events:${AWS::Region}:${CrossAccountID}:event-bus/Cross-Account-Demo-EventBus"
+                                        },
+                                        {
+                                            "Fn::Sub": "arn:aws:events:${CrossRegion}:${CrossAccountID}:event-bus/Cross-Account-Demo-EventBus"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Sid": "CrossRegionEventAccessPermission",
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "events:PutEvents"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Fn::Sub": "arn:aws:events:${CrossRegion}:${AWS::AccountId}:event-bus/Cross-Region-Demo-EventBus"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "SourceEventBusLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+                "LogGroupName": {
+                    "Ref": "LogName"
+                },
+                "RetentionInDays": 120
+            }
+        }
+    }
+}
